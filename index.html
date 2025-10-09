@@ -107,7 +107,7 @@
                 '#player { margin-bottom: 20px; width: 100%; max-width: 854px; }' +
                 '#player iframe { width: 100%; height: auto; aspect-ratio: 16/9; }' +
                 '.controls { display: flex; gap: 10px; background: #333; padding: 15px; border-radius: 8px; flex-wrap: wrap; justify-content: center; max-width: 854px; width: 100%; }' +
-                '.controls button { padding: 12px 24px; background: #ff0000; color: white; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; transition: background 0.3s; flex: 1; min-width: 120px; }' +
+                '.controls button { padding: 12px 24px; background: #ff0000; color: white; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; transition: background 0.3s; flex: 1; min-width: 140px; }' +
                 '.controls button:hover { background: #cc0000; }' +
                 '.controls button:active { background: #990000; }' +
                 '@media (max-width: 600px) { .controls button { font-size: 12px; padding: 10px 16px; min-width: 80px; } }' +
@@ -116,10 +116,9 @@
                 '<body>' +
                 '<div id="player"></div>' +
                 '<div class="controls">' +
-                '<button onclick="skipBackward()">⏪ Skip Back 5s</button>' +
-                '<button onclick="playVideo()">▶ Play</button>' +
-                '<button onclick="pauseVideo()">⏸ Pause</button>' +
-                '<button onclick="skipForward()">⏩ Skip Ahead 5s</button>' +
+                '<button onclick="skipBackward()">⏪ 5s</button>' +
+                '<button id="playPauseBtn" onclick="togglePlayPause()">▶ Play</button>' +
+                '<button onclick="skipForward()">⏩ 5s</button>' +
                 '</div>' +
                 '<script src="https://www.youtube.com/iframe_api"><\/script>' +
                 '<script>' +
@@ -135,6 +134,17 @@
                 '});' +
                 '}' +
                 'function onPlayerReady(event) { player.setPlaybackQuality("hd720"); }' +
+                'function togglePlayPause() {' +
+                '  const state = player.getPlayerState();' +
+                '  const btn = document.getElementById("playPauseBtn");' +
+                '  if (state === 1) {' +
+                '    player.pauseVideo();' +
+                '    btn.innerHTML = "▶ Play";' +
+                '  } else {' +
+                '    player.playVideo();' +
+                '    btn.innerHTML = "⏸ Pause";' +
+                '  }' +
+                '}' +
                 'function playVideo() { player.playVideo(); }' +
                 'function pauseVideo() { player.pauseVideo(); }' +
                 'function skipForward() { const currentTime = player.getCurrentTime(); player.seekTo(currentTime + 5, true); }' +
