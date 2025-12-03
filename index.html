@@ -77,6 +77,19 @@
             width: 100%;
             height: 480px;
         }
+        .quality-indicator {
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-size: 14px;
+            margin: 10px auto;
+            text-align: center;
+            max-width: 854px;
+        }
+        .quality-indicator strong {
+            color: #ff0000;
+        }
         .controls {
             display: flex;
             gap: 10px;
@@ -147,6 +160,9 @@
         <div class="video-wrapper">
             <div id="player"></div>
         </div>
+        <div class="quality-indicator" id="qualityIndicator">
+            Current Quality: <strong id="currentQuality">Loading...</strong>
+        </div>
         <div class="controls">
             <button onclick="skipBackward()">⏪ 5s</button>
             <button id="playPauseBtn" onclick="togglePlayPause()">▶ Play</button>
@@ -159,6 +175,7 @@
         let player;
         let playerReady = false;
         let preferredQuality = 'hd720';
+        let qualityCheckInterval;
 
         function extractVideoId(url) {
             const patterns = [
@@ -195,6 +212,7 @@
                 player.loadVideoById(videoId);
                 setTimeout(() => {
                     player.setPlaybackQuality(preferredQuality);
+                    startQualityMonitoring();
                 }, 1000);
             } else {
                 player = new YT.Player('player', {
@@ -220,6 +238,33 @@
             playerReady = true;
             player.setPlaybackQuality(preferredQuality);
             console.log('Player ready, quality set to: ' + preferredQuality);
+            startQualityMonitoring();
+        }
+
+        function startQualityMonitoring() {
+            if (qualityCheckInterval) {
+                clearInterval(qualityCheckInterval);
+            }
+            updateQualityDisplay();
+            qualityCheckInterval = setInterval(updateQualityDisplay, 2000);
+        }
+
+        function updateQualityDisplay() {
+            if (!playerReady || !player.getPlaybackQuality) return;
+            
+            const quality = player.getPlaybackQuality();
+            const qualityMap = {
+                'small': '240p',
+                'medium': '360p',
+                'large': '480p',
+                'hd720': '720p',
+                'hd1080': '1080p',
+                'highres': '1440p+',
+                'default': 'Auto'
+            };
+            
+            const displayQuality = qualityMap[quality] || quality;
+            document.getElementById('currentQuality').textContent = displayQuality;
         }
 
         function onPlayerStateChange(event) {
@@ -258,6 +303,10 @@
         }
 
         function loadNewVideo() {
+            if (qualityCheckInterval) {
+                clearInterval(qualityCheckInterval);
+            }
+            document.getElementById('currentQuality').textContent = 'Loading...';
             document.getElementById('youtubeUrl').value = '';
             document.getElementById('youtubeUrl').focus();
             window.scrollTo({ top: 0, behavior: 'smooth' });
