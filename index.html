@@ -72,23 +72,56 @@
             max-width: 854px;
             margin: 0 auto 20px;
             background: #000;
+            transition: max-width 0.3s ease;
+        }
+        .video-wrapper.size-small {
+            max-width: 640px;
+        }
+        .video-wrapper.size-medium {
+            max-width: 854px;
+        }
+        .video-wrapper.size-large {
+            max-width: 1280px;
+        }
+        .video-wrapper.size-xlarge {
+            max-width: 1920px;
         }
         #player {
             width: 100%;
             height: 480px;
         }
-        .quality-indicator {
-            background: rgba(0, 0, 0, 0.8);
-            color: #fff;
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-size: 14px;
-            margin: 10px auto;
+        .size-controls {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 0 auto 15px;
             text-align: center;
-            max-width: 854px;
+            max-width: 100%;
         }
-        .quality-indicator strong {
-            color: #ff0000;
+        .size-controls label {
+            margin-right: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        .size-controls button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            background: #fff;
+            color: #333;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .size-controls button:hover {
+            background: #f0f0f0;
+            border-color: #ff0000;
+        }
+        .size-controls button.active {
+            background: #ff0000;
+            color: white;
+            border-color: #ff0000;
         }
         .controls {
             display: flex;
@@ -150,18 +183,19 @@
     <div class="container">
         <h1>YouTube Video Player</h1>
         <input type="text" id="youtubeUrl" placeholder="Enter YouTube URL here..." />
-        <div class="button-group">
-            <button class="btn" onclick="loadVideo('hd720')">Load 720p</button>
-            <button class="btn" onclick="loadVideo('hd1080')">Load 1080p</button>
-        </div>
+        <button class="btn" onclick="loadVideo()">Load Player</button>
     </div>
 
     <div id="playerSection">
-        <div class="video-wrapper">
-            <div id="player"></div>
+        <div class="size-controls">
+            <label>Player Size:</label>
+            <button onclick="setPlayerSize('small', this)">Small (640p)</button>
+            <button onclick="setPlayerSize('medium', this)" class="active">Medium (720p)</button>
+            <button onclick="setPlayerSize('large', this)">Large (1080p)</button>
+            <button onclick="setPlayerSize('xlarge', this)">XLarge (1440p+)</button>
         </div>
-        <div class="quality-indicator" id="qualityIndicator">
-            Current Quality: <strong id="currentQuality">Loading...</strong>
+        <div class="video-wrapper size-medium" id="videoWrapper">
+            <div id="player"></div>
         </div>
         <div class="controls">
             <button onclick="skipBackward()">⏪ 5s</button>
@@ -174,8 +208,7 @@
     <script>
         let player;
         let playerReady = false;
-        let preferredQuality = 'hd720';
-        let qualityCheckInterval;
+        let currentSize = 'medium';
 
         function extractVideoId(url) {
             const patterns = [
@@ -197,7 +230,6 @@
         }
 
         function loadVideo(quality) {
-            preferredQuality = quality || 'hd720';
             const url = document.getElementById('youtubeUrl').value;
             const videoId = extractVideoId(url);
             
@@ -210,10 +242,6 @@
             
             if (player) {
                 player.loadVideoById(videoId);
-                setTimeout(() => {
-                    setVideoQuality(preferredQuality);
-                    startQualityMonitoring();
-                }, 1500);
             } else {
                 player = new YT.Player('player', {
                     videoId: videoId,
@@ -236,39 +264,24 @@
 
         function onPlayerReady(event) {
             playerReady = true;
-            setVideoQuality(preferredQuality);
-            console.log('Player ready, requesting quality: ' + preferredQuality);
-            
-            // Log available quality levels
-            const availableLevels = player.getAvailableQualityLevels();
-            console.log('Available qualities:', availableLevels);
-            
-            startQualityMonitoring();
+            console.log('Player ready');
         }
 
-        function setVideoQuality(quality) {
-            if (!playerReady) return;
+        function setPlayerSize(size, buttonElement) {
+            const wrapper = document.getElementById('videoWrapper');
+            const buttons = document.querySelectorAll('.size-controls button');
             
-            // Use setPlaybackQualityRange for more control
-            if (quality === 'hd1080') {
-                player.setPlaybackQualityRange('hd1080', 'hd1080');
-            } else if (quality === 'hd720') {
-                player.setPlaybackQualityRange('hd720', 'hd720');
+            // Remove all size classes and add new one
+            wrapper.className = 'video-wrapper size-' + size;
+            
+            // Update active button
+            buttons.forEach(btn => btn.classList.remove('active'));
+            if (buttonElement) {
+                buttonElement.classList.add('active');
             }
             
-            // Also try setPlaybackQuality as backup
-            player.setPlaybackQuality(quality);
-            
-            // Try again after a delay
-            setTimeout(() => {
-                player.setPlaybackQuality(quality);
-                console.log('Quality re-requested:', quality);
-            }, 2000);
-            
-            setTimeout(() => {
-                player.setPlaybackQuality(quality);
-                console.log('Quality re-requested again:', quality);
-            }, 4000);
+            currentSize = size;
+            console.log('Player size set to:', size);
         }
 
         function startQualityMonitoring() {
