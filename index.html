@@ -211,9 +211,9 @@
             if (player) {
                 player.loadVideoById(videoId);
                 setTimeout(() => {
-                    player.setPlaybackQuality(preferredQuality);
+                    setVideoQuality(preferredQuality);
                     startQualityMonitoring();
-                }, 1000);
+                }, 1500);
             } else {
                 player = new YT.Player('player', {
                     videoId: videoId,
@@ -236,9 +236,39 @@
 
         function onPlayerReady(event) {
             playerReady = true;
-            player.setPlaybackQuality(preferredQuality);
-            console.log('Player ready, quality set to: ' + preferredQuality);
+            setVideoQuality(preferredQuality);
+            console.log('Player ready, requesting quality: ' + preferredQuality);
+            
+            // Log available quality levels
+            const availableLevels = player.getAvailableQualityLevels();
+            console.log('Available qualities:', availableLevels);
+            
             startQualityMonitoring();
+        }
+
+        function setVideoQuality(quality) {
+            if (!playerReady) return;
+            
+            // Use setPlaybackQualityRange for more control
+            if (quality === 'hd1080') {
+                player.setPlaybackQualityRange('hd1080', 'hd1080');
+            } else if (quality === 'hd720') {
+                player.setPlaybackQualityRange('hd720', 'hd720');
+            }
+            
+            // Also try setPlaybackQuality as backup
+            player.setPlaybackQuality(quality);
+            
+            // Try again after a delay
+            setTimeout(() => {
+                player.setPlaybackQuality(quality);
+                console.log('Quality re-requested:', quality);
+            }, 2000);
+            
+            setTimeout(() => {
+                player.setPlaybackQuality(quality);
+                console.log('Quality re-requested again:', quality);
+            }, 4000);
         }
 
         function startQualityMonitoring() {
@@ -253,6 +283,8 @@
             if (!playerReady || !player.getPlaybackQuality) return;
             
             const quality = player.getPlaybackQuality();
+            const availableLevels = player.getAvailableQualityLevels();
+            
             const qualityMap = {
                 'small': '240p',
                 'medium': '360p',
@@ -264,7 +296,19 @@
             };
             
             const displayQuality = qualityMap[quality] || quality;
-            document.getElementById('currentQuality').textContent = displayQuality;
+            let displayText = displayQuality;
+            
+            // Check if requested quality is available
+            if (preferredQuality === 'hd1080' && !availableLevels.includes('hd1080')) {
+                displayText += ' (1080p not available)';
+            } else if (preferredQuality === 'hd720' && !availableLevels.includes('hd720')) {
+                displayText += ' (720p not available)';
+            } else if (quality !== preferredQuality) {
+                const requestedDisplay = qualityMap[preferredQuality];
+                displayText += ' (requested: ' + requestedDisplay + ')';
+            }
+            
+            document.getElementById('currentQuality').textContent = displayText;
         }
 
         function onPlayerStateChange(event) {
